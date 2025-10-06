@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Konseling Siswa</title>
+    <!-- Menggunakan Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Menggunakan Font Awesome untuk ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar untuk chat box */
+        .chat-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Animasi sederhana */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen">
+
+    <div id="app-container" class="w-full max-w-4xl mx-auto bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-500">
+
+        <!-- Tampilan Login -->
+        <div id="login-view" class="p-8 fade-in">
+            <div class="text-center mb-8">
+                <i class="fas fa-school text-4xl text-blue-500"></i>
+                <h1 class="text-3xl font-bold text-gray-800 mt-2">Aplikasi Konseling Sekolah</h1>
+                <p class="text-gray-500">Silakan masuk sebagai Siswa atau Admin.</p>
+                <p class="text-gray-600 mt-4 max-w-xl mx-auto">
+                    Selamat datang! Aplikasi ini dirancang untuk memberikan ruang aman bagi siswa untuk berkomunikasi dengan konselor sekolah, menjadwalkan sesi, dan mendapatkan dukungan.
+                </p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="nama-pengguna" placeholder="Masukkan Nama Lengkap Anda" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="peran-pengguna" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="user">Saya adalah Siswa</option>
+                    <option value="admin">Saya adalah Admin (Konselor)</option>
+                </select>
+                <div id="user-details" class="space-y-4">
+                    <input type="text" id="asal-sekolah" placeholder="Asal Sekolah" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="kelas" placeholder="Kelas (contoh: 10A)" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button id="login-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                    Masuk
+                </button>
+            </div>
+            <p id="login-error" class="text-red-500 text-sm mt-4 text-center"></p>
+            <div class="mt-8 text-center text-xs text-gray-400">
+                <p class="font-semibold text-gray-500">Tentang Aplikasi Ini</p>
+                <p>Aplikasi ini adalah jembatan digital antara siswa dan konselor. Kami percaya setiap siswa berhak mendapatkan dukungan untuk kesehatan mental dan perkembangan diri. Jangan ragu untuk menjangkau!</p>
+            </div>
+        </div>
+
+        <!-- Tampilan User (Siswa) -->
+        <div id="user-view" class="hidden fade-in">
+            <header class="bg-blue-500 p-4 flex justify-between items-center text-white">
+                <div>
+                    <h2 class="text-xl font-bold">Halo, <span id="display-nama-user"></span>!</h2>
+                    <p class="text-sm">Selamat datang di layanan konseling.</p>
+                </div>
+                <button id="logout-button-user" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg text-sm">Keluar</button>
+            </header>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Kolom Jadwal Konsul -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b pb-2"><i class="fas fa-calendar-alt mr-2"></i>Buat Jadwal Konseling</h3>
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-600">Pilih tanggal dan jam yang tersedia untuk menjadwalkan sesi konseling dengan admin.</p>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="date" id="tanggal-konsul" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="time" id="waktu-konsul" class="w-full sm:w-auto px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <button id="buat-jadwal-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                            Ajukan Jadwal
+                        </button>
+                        <p id="jadwal-info" class="text-center text-green-600 font-medium text-sm mt-2"></p>
+                    </div>
+                </div>
+                <!-- Kolom Chat dengan Admin -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-col">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b pb-2"><i class="fas fa-comments mr-2"></i>Chat dengan Konselor</h3>
+                    <div id="user-chat-box" class="chat-box flex-grow h-64 overflow-y-auto bg-white border rounded-lg p-4 mb-4 space-y-4">
+                        <!-- Pesan akan muncul di sini -->
+                    </div>
+                    <div class="flex">
+                        <input type="text" id="user-chat-input" placeholder="Ketik pesan Anda..." class="flex-grow px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button id="user-send-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-r-lg">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+             <!-- Kolom Komentar Aplikasi -->
+            <div class="px-6">
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b pb-2"><i class="fas fa-star mr-2"></i>Beri Komentar Tentang Aplikasi</h3>
+                    <div class="space-y-4">
+                        <textarea id="komentar-input" placeholder="Tulis masukan atau komentar Anda di sini..." class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
+                        <button id="kirim-komentar-button" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                            Kirim Komentar
+                        </button>
+                        <p id="komentar-info" class="text-center text-green-600 font-medium text-sm mt-2"></p>
+                    </div>
+                </div>
+            </div>
+            <!-- Bagian Motivasi -->
+            <div class="p-6">
+                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 rounded-lg shadow-lg text-center">
+                    <h4 class="font-bold text-lg">Kutipan Motivasi Hari Ini</h4>
+                    <p id="kata-motivasi" class="mt-2 italic">"Percayalah pada dirimu sendiri. Kamu lebih berani dari yang kamu duga, lebih berbakat dari yang kamu tahu, dan mampu melakukan lebih dari yang kamu bayangkan."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tampilan Admin (Konselor) -->
+        <div id="admin-view" class="hidden fade-in">
+            <header class="bg-gray-800 p-4 flex justify-between items-center text-white">
+                <div>
+                    <h2 class="text-xl font-bold">Dasbor Admin</h2>
+                    <p class="text-sm">Manajemen Konseling Siswa.</p>
+                </div>
+                <button id="logout-button-admin" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg text-sm">Keluar</button>
+            </header>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Kolom Jadwal & Komentar -->
+                <div class="md:col-span-1 bg-gray-50 p-4 rounded-lg shadow-inner">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b pb-2"><i class="fas fa-calendar-check mr-2"></i>Jadwal Konsultasi Masuk</h3>
+                    <div id="jadwal-konsul-list" class="space-y-3 max-h-80 overflow-y-auto">
+                        <!-- Daftar jadwal akan muncul di sini -->
+                         <p class="text-sm text-gray-500 text-center py-4">Belum ada jadwal konsultasi.</p>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4 border-b pb-2 mt-6"><i class="fas fa-comments-dollar mr-2"></i>Komentar & Masukan</h3>
+                    <div id="feedback-list" class="space-y-3 max-h-80 overflow-y-auto">
+                        <!-- Daftar komentar akan muncul di sini -->
+                         <p class="text-sm text-gray-500 text-center py-4">Belum ada komentar.</p>
+                    </div>
+                </div>
+                <!-- Kolom Daftar Chat & Chatbox -->
+                <div class="md:col-span-2 bg-gray-50 p-4 rounded-lg shadow-inner flex flex-col">
+                    <div class="flex flex-col space-y-4">
+                         <div>
+                            <h3 class="text-lg font-semibold text-gray-700"><i class="fas fa-users mr-2"></i>Pesan Siswa</h3>
+                            <div id="user-chat-list" class="mt-2 space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2">
+                                <!-- Daftar user yang chat akan muncul di sini -->
+                                <p class="text-sm text-gray-500 text-center py-4">Belum ada pesan masuk.</p>
+                            </div>
+                         </div>
+                         <div class="flex flex-col">
+                            <h3 class="text-lg font-semibold text-gray-700">Percakapan dengan: <span id="admin-chat-header" class="text-blue-600">...</span></h3>
+                             <div id="admin-chat-box" class="chat-box flex-grow h-64 overflow-y-auto bg-white border rounded-lg p-4 my-2 space-y-4">
+                                <!-- Pesan akan muncul di sini -->
+                                <p class="text-sm text-gray-500 text-center self-center h-full flex items-center justify-center">Pilih siswa untuk melihat percakapan.</p>
+                            </div>
+                            <div class="flex">
+                                <input type="text" id="admin-chat-input" placeholder="Balas pesan..." class="flex-grow px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                                <button id="admin-send-button" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-r-lg" disabled>
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import fungsi yang diperlukan dari Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            doc, 
+            setDoc,
+            onSnapshot, 
+            query, 
+            orderBy,
+            serverTimestamp,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Konfigurasi Firebase Anda (akan diisi secara otomatis)
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-konseling-app';
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Variabel Global
+        let currentUser = null;
+        let selectedChatUserId = null; // Untuk admin: user ID dari chat yang sedang dibuka
+        let unsubscribeUserChat = null; // Untuk membatalkan listener chat user
+        let unsubscribeAdminAppointments = null; // Untuk membatalkan listener jadwal
+        let unsubscribeAdminChats = null; // Untuk membatalkan listener daftar chat
+        let unsubscribeAdminMessages = null; // Untuk membatalkan listener pesan di admin view
+        let unsubscribeAdminFeedback = null; // Untuk membatalkan listener feedback
+
+        const motivationalQuotes = [
+            "Percayalah pada dirimu sendiri. Kamu lebih berani dari yang kamu duga, lebih berbakat dari yang kamu tahu, dan mampu melakukan lebih dari yang kamu bayangkan.",
+            "Jangan takut gagal. Kegagalan bukanlah akhir, melainkan kesempatan untuk belajar dan tumbuh lebih kuat.",
+            "Setiap langkah kecil menuju tujuanmu adalah sebuah kemajuan besar. Teruslah bergerak maju!",
+            "Pendidikan adalah senjata paling ampuh yang bisa kamu gunakan untuk mengubah dunia. - Nelson Mandela",
+            "Satu-satunya cara untuk melakukan pekerjaan hebat adalah dengan mencintai apa yang kamu lakukan. - Steve Jobs",
+            "Masa depan adalah milik mereka yang percaya pada keindahan impian mereka. - Eleanor Roosevelt"
+        ];
+
+        // Elemen DOM
+        const loginView = document.getElementById('login-view');
+        const userView = document.getElementById('user-view');
+        const adminView = document.getElementById('admin-view');
+        const peranPenggunaSelect = document.getElementById('peran-pengguna');
+        const userDetailsDiv = document.getElementById('user-details');
+        
+        // Fungsi untuk menampilkan view tertentu
+        const showView = (viewId) => {
+            loginView.classList.add('hidden');
+            userView.classList.add('hidden');
+            adminView.classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        };
+
+        // --- Logika Autentikasi dan Login ---
+        const initializeAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                document.getElementById('login-error').textContent = "Gagal terhubung ke server.";
+            }
+        };
+
+        peranPenggunaSelect.addEventListener('change', () => {
+            if (peranPenggunaSelect.value === 'user') {
+                userDetailsDiv.classList.remove('hidden');
+            } else {
+                userDetailsDiv.classList.add('hidden');
+            }
+        });
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                const userData = JSON.parse(sessionStorage.getItem('userData'));
+                if (userData) {
+                    currentUser = { uid: user.uid, ...userData };
+                    if (currentUser.role === 'admin') {
+                        initAdminView();
+                    } else {
+                        initUserView();
+                    }
+                }
+            }
+        });
+
+        document.getElementById('login-button').addEventListener('click', () => {
+            const nama = document.getElementById('nama-pengguna').value.trim();
+            const peran = peranPenggunaSelect.value;
+            const loginError = document.getElementById('login-error');
+
+            if (!nama) {
+                loginError.textContent = "Nama tidak boleh kosong.";
+                return;
+            }
+            if (!auth.currentUser) {
+                loginError.textContent = "Sesi belum siap, silakan coba lagi sesaat.";
+                return;
+            }
+            loginError.textContent = "";
+
+            // Validasi khusus untuk admin
+            if (peran === 'admin' && nama.toLowerCase() !== 'keihsa anindya danastri') {
+                loginError.textContent = "Anda tidak memiliki akses sebagai admin.";
+                return;
+            }
+
+            let userData = { name: nama, role: peran };
+
+            if (peran === 'user') {
+                const sekolah = document.getElementById('asal-sekolah').value.trim();
+                const kelas = document.getElementById('kelas').value.trim();
+                if (!sekolah || !kelas) {
+                    loginError.textContent = "Asal sekolah dan kelas tidak boleh kosong.";
+                    return;
+                }
+                userData.sekolah = sekolah;
+                userData.kelas = kelas;
+            }
+
+            sessionStorage.setItem('userData', JSON.stringify(userData));
+            currentUser = { uid: auth.currentUser.uid, ...userData };
+
+            if (peran === 'user') {
+                initUserView();
+            } else {
+                initAdminView();
+            }
+        });
+        
+        // --- Logika Logout ---
+        const logout = () => {
+            sessionStorage.removeItem('userData');
+            currentUser = null;
+            selectedChatUserId = null;
+            
+            if (unsubscribeUserChat) unsubscribeUserChat();
+            if (unsubscribeAdminAppointments) unsubscribeAdminAppointments();
+            if (unsubscribeAdminChats) unsubscribeAdminChats();
+            if (unsubscribeAdminMessages) unsubscribeAdminMessages();
+            if (unsubscribeAdminFeedback) unsubscribeAdminFeedback();
+
+            document.getElementById('nama-pengguna').value = '';
+            showView('login-view');
+        };
+
+        document.getElementById('logout-button-user').addEventListener('click', logout);
+        document.getElementById('logout-button-admin').addEventListener('click', logout);
+
+        // --- Logika Tampilan User (Siswa) ---
+        const initUserView = () => {
+            showView('user-view');
+            document.getElementById('display-nama-user').textContent = currentUser.name;
+            
+            const quoteEl = document.getElementById('kata-motivasi');
+            const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+            quoteEl.textContent = `"${motivationalQuotes[randomIndex]}"`;
+
+            loadUserChat();
+        };
+
+        document.getElementById('buat-jadwal-button').addEventListener('click', async () => {
+            const tanggal = document.getElementById('tanggal-konsul').value;
+            const waktu = document.getElementById('waktu-konsul').value;
+            const infoEl = document.getElementById('jadwal-info');
+            if (!tanggal || !waktu) {
+                infoEl.textContent = "Silakan pilih tanggal dan jam terlebih dahulu.";
+                infoEl.className = "text-center text-red-600 font-medium text-sm mt-2";
+                return;
+            }
+            try {
+                const docRef = collection(db, `artifacts/${appId}/public/data/appointments`);
+                await addDoc(docRef, {
+                    userId: currentUser.uid,
+                    userName: currentUser.name,
+                    sekolah: currentUser.sekolah,
+                    kelas: currentUser.kelas,
+                    date: tanggal,
+                    time: waktu,
+                    createdAt: serverTimestamp()
+                });
+                infoEl.textContent = "Jadwal berhasil diajukan!";
+                infoEl.className = "text-center text-green-600 font-medium text-sm mt-2";
+                document.getElementById('tanggal-konsul').value = '';
+                document.getElementById('waktu-konsul').value = '';
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                infoEl.textContent = "Gagal mengajukan jadwal.";
+                infoEl.className = "text-center text-red-600 font-medium text-sm mt-2";
+            }
+        });
+
+        document.getElementById('kirim-komentar-button').addEventListener('click', async () => {
+            const komentarInput = document.getElementById('komentar-input');
+            const komentarText = komentarInput.value.trim();
+            const infoEl = document.getElementById('komentar-info');
+
+            if (komentarText === '') {
+                infoEl.textContent = "Komentar tidak boleh kosong.";
+                infoEl.className = "text-center text-red-600 font-medium text-sm mt-2";
+                return;
+            }
+
+            try {
+                const docRef = collection(db, `artifacts/${appId}/public/data/feedback`);
+                await addDoc(docRef, {
+                    userName: currentUser.name,
+                    sekolah: currentUser.sekolah,
+                    kelas: currentUser.kelas,
+                    comment: komentarText,
+                    createdAt: serverTimestamp()
+                });
+                infoEl.textContent = "Terima kasih atas masukan Anda!";
+                infoEl.className = "text-center text-green-600 font-medium text-sm mt-2";
+                komentarInput.value = '';
+            } catch (e) {
+                console.error("Error sending feedback: ", e);
+                infoEl.textContent = "Gagal mengirim komentar.";
+                infoEl.className = "text-center text-red-600 font-medium text-sm mt-2";
+            }
+        });
+
+
+        const loadUserChat = () => {
+            const chatBox = document.getElementById('user-chat-box');
+            const chatCollectionPath = `artifacts/${appId}/public/data/chats/${currentUser.uid}/messages`;
+            const q = query(collection(db, chatCollectionPath), orderBy("timestamp"));
+
+            if (unsubscribeUserChat) unsubscribeUserChat();
+            unsubscribeUserChat = onSnapshot(q, (querySnapshot) => {
+                chatBox.innerHTML = '';
+                if (querySnapshot.empty) {
+                    chatBox.innerHTML = `<p class="text-sm text-gray-500 text-center">Mulai percakapan dengan konselor.</p>`;
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const message = doc.data();
+                        const isMe = message.senderId === currentUser.uid;
+                        const messageEl = document.createElement('div');
+                        messageEl.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+                        messageEl.innerHTML = `
+                            <div class="max-w-xs md:max-w-md px-4 py-2 rounded-xl ${isMe ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                                <p class="text-sm">${message.text}</p>
+                            </div>
+                        `;
+                        chatBox.appendChild(messageEl);
+                    });
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, (error) => {
+                console.error("Error loading user chat:", error);
+            });
+        };
+
+        const sendUserMessage = async () => {
+            const input = document.getElementById('user-chat-input');
+            const text = input.value.trim();
+            if (text === '') return;
+
+            const chatCollectionPath = `artifacts/${appId}/public/data/chats/${currentUser.uid}/messages`;
+            try {
+                await setDoc(doc(db, `artifacts/${appId}/public/data/chats`, currentUser.uid), {
+                    userName: currentUser.name,
+                    sekolah: currentUser.sekolah,
+                    kelas: currentUser.kelas,
+                    lastUpdate: serverTimestamp()
+                });
+                await addDoc(collection(db, chatCollectionPath), {
+                    text: text,
+                    senderId: currentUser.uid,
+                    senderName: currentUser.name,
+                    timestamp: serverTimestamp()
+                });
+                input.value = '';
+            } catch (e) {
+                console.error("Gagal mengirim pesan: ", e);
+            }
+        };
+
+        document.getElementById('user-send-button').addEventListener('click', sendUserMessage);
+        document.getElementById('user-chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendUserMessage();
+        });
+
+        // --- Logika Tampilan Admin (Konselor) ---
+        const initAdminView = () => {
+            showView('admin-view');
+            loadAppointments();
+            loadUserChatList();
+            loadFeedback();
+        };
+
+        const loadAppointments = () => {
+            const listEl = document.getElementById('jadwal-konsul-list');
+            const q = query(collection(db, `artifacts/${appId}/public/data/appointments`), orderBy("createdAt", "desc"));
+            
+            if (unsubscribeAdminAppointments) unsubscribeAdminAppointments();
+            unsubscribeAdminAppointments = onSnapshot(q, (querySnapshot) => {
+                if (querySnapshot.empty) {
+                    listEl.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Belum ada jadwal konsultasi.</p>`;
+                    return;
+                }
+                listEl.innerHTML = '';
+                const appointments = [];
+                querySnapshot.forEach(doc => appointments.push(doc.data()));
+                
+                appointments.sort((a, b) => {
+                    const dateTimeA = new Date(`${a.date}T${a.time || '00:00'}`);
+                    const dateTimeB = new Date(`${b.date}T${b.time || '00:00'}`);
+                    return dateTimeA - dateTimeB;
+                });
+
+                appointments.forEach((data) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'bg-white p-3 rounded-lg border';
+                    itemEl.innerHTML = `
+                        <p class="font-semibold text-gray-800">${data.userName}</p>
+                        <p class="text-xs text-gray-500">${data.sekolah || ''} - ${data.kelas || ''}</p>
+                        <p class="text-sm text-gray-600 mt-1">Tanggal: ${data.date}</p>
+                        <p class="text-sm text-gray-600">Waktu: ${data.time}</p>
+                    `;
+                    listEl.appendChild(itemEl);
+                });
+            });
+        };
+
+        const loadFeedback = () => {
+            const listEl = document.getElementById('feedback-list');
+            const q = query(collection(db, `artifacts/${appId}/public/data/feedback`), orderBy("createdAt", "desc"));
+
+            if (unsubscribeAdminFeedback) unsubscribeAdminFeedback();
+            unsubscribeAdminFeedback = onSnapshot(q, (querySnapshot) => {
+                if(querySnapshot.empty) {
+                    listEl.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Belum ada komentar.</p>`;
+                    return;
+                }
+                listEl.innerHTML = '';
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'bg-white p-3 rounded-lg border';
+                    itemEl.innerHTML = `
+                        <p class="font-semibold text-gray-800">${data.userName} <span class="font-normal text-xs text-gray-500">(${data.kelas || ''})</span></p>
+                        <p class="text-sm text-gray-600 italic mt-1">"${data.comment}"</p>
+                    `;
+                    listEl.appendChild(itemEl);
+                });
+            });
+        };
+
+        const loadUserChatList = () => {
+            const listEl = document.getElementById('user-chat-list');
+            const q = query(collection(db, `artifacts/${appId}/public/data/chats`), orderBy("lastUpdate", "desc"));
+
+            if (unsubscribeAdminChats) unsubscribeAdminChats();
+            unsubscribeAdminChats = onSnapshot(q, (querySnapshot) => {
+                if (querySnapshot.empty) {
+                    listEl.innerHTML = `<p class="text-sm text-gray-500 text-center py-4">Belum ada pesan masuk.</p>`;
+                    return;
+                }
+                listEl.innerHTML = '';
+                querySnapshot.forEach((doc) => {
+                    const userData = doc.data();
+                    const userId = doc.id;
+                    const itemEl = document.createElement('button');
+                    itemEl.className = `w-full text-left p-2 rounded-lg hover:bg-gray-200 transition ${selectedChatUserId === userId ? 'bg-blue-100 font-semibold' : ''}`;
+                    itemEl.innerHTML = `
+                        <div class="flex justify-between items-center w-full">
+                            <span class="truncate font-medium">${userData.userName}</span>
+                            <span class="text-xs text-gray-500 whitespace-nowrap ml-2">${userData.kelas || ''}</span>
+                        </div>
+                    `;
+                    itemEl.onclick = () => {
+                        selectChat(userId, userData.userName);
+                    };
+                    listEl.appendChild(itemEl);
+                });
+            });
+        };
+        
+        const selectChat = (userId, userName) => {
+            selectedChatUserId = userId;
+            document.getElementById('admin-chat-header').textContent = userName;
+            
+            const buttons = document.querySelectorAll('#user-chat-list button');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-blue-100', 'font-semibold');
+            });
+            // Highlight the selected button
+            const selectedBtn = Array.from(buttons).find(btn => btn.onclick.toString().includes(`'${userId}'`));
+            if(selectedBtn) {
+                selectedBtn.classList.add('bg-blue-100', 'font-semibold');
+            }
+
+
+            document.getElementById('admin-chat-input').disabled = false;
+            document.getElementById('admin-send-button').disabled = false;
+
+            loadAdminMessages(userId);
+        };
+
+        const loadAdminMessages = (userId) => {
+            const chatBox = document.getElementById('admin-chat-box');
+            const chatCollectionPath = `artifacts/${appId}/public/data/chats/${userId}/messages`;
+            const q = query(collection(db, chatCollectionPath), orderBy("timestamp"));
+
+            if (unsubscribeAdminMessages) unsubscribeAdminMessages();
+            unsubscribeAdminMessages = onSnapshot(q, (querySnapshot) => {
+                chatBox.innerHTML = '';
+                 if (querySnapshot.empty) {
+                    chatBox.innerHTML = `<p class="text-sm text-gray-500 text-center self-center h-full flex items-center justify-center">Belum ada pesan dalam percakapan ini.</p>`;
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const message = doc.data();
+                        const isAdminSender = message.senderId === 'admin';
+                        const messageEl = document.createElement('div');
+                        messageEl.className = `flex ${isAdminSender ? 'justify-end' : 'justify-start'}`;
+                        messageEl.innerHTML = `
+                             <div class="max-w-xs md:max-w-md px-4 py-2 rounded-xl ${isAdminSender ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'}">
+                                <p class="text-sm">${message.text}</p>
+                            </div>
+                        `;
+                        chatBox.appendChild(messageEl);
+                    });
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        };
+
+        const sendAdminMessage = async () => {
+            const input = document.getElementById('admin-chat-input');
+            const text = input.value.trim();
+            if (text === '' || !selectedChatUserId) return;
+
+            const chatCollectionPath = `artifacts/${appId}/public/data/chats/${selectedChatUserId}/messages`;
+            try {
+                 await setDoc(doc(db, `artifacts/${appId}/public/data/chats`, selectedChatUserId), {
+                    lastUpdate: serverTimestamp()
+                }, { merge: true });
+
+                await addDoc(collection(db, chatCollectionPath), {
+                    text: text,
+                    senderId: 'admin',
+                    senderName: 'Admin',
+                    timestamp: serverTimestamp()
+                });
+                input.value = '';
+            } catch (e) {
+                console.error("Gagal mengirim balasan: ", e);
+            }
+        };
+
+        document.getElementById('admin-send-button').addEventListener('click', sendAdminMessage);
+        document.getElementById('admin-chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendAdminMessage();
+        });
+
+        // Initialize Authentication
+        initializeAuth();
+
+    </script>
+</body>
+</html>
+
